@@ -10,7 +10,7 @@ directly](https://raw.githubusercontent.com/lurchmath/openmath-js/master/openmat
 or import from a CDN with the following one-liner.
 
 ```html
-<script src='https://cdn.jsdelivr.net/npm/first-order-matching@1.0.4/first-order-matching.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/first-order-matching@1.0.5/first-order-matching.js'></script>
 ```
 
 ### From the command line

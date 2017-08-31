@@ -1,6 +1,6 @@
 {
     "name": "first-order-matching",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "A limited JavaScript implementation of a matching algorithm for expressions of first-order logic",
     "author": "Nathan Carter <ncarter@bentley.edu> (http://nathancarter.github.io",
     "license": "LGPLv3",

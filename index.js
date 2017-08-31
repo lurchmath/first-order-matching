@@ -36,4 +36,6 @@ exports.bindingConstraints2 = matching.bindingConstraints2;
 exports.satisfiesBindingConstraints2 = matching.satisfiesBindingConstraints2;
 exports.setMatchDebug = matching.setMatchDebug;
 exports.nextMatch = matching.nextMatch;
+exports.OM = matching.OM
+exports.OMNode = matching.OMNode
 
