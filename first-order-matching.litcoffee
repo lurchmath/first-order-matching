@@ -174,10 +174,11 @@ constraints, or a solution as a list of metavariable-expression pairs.
 
 Construct a constraint list by providing zero or more constraints to add to
 it initially.  Besides simply storing those constraints, this function also
-computes the first variable from the list `v0`, `v1`, `v2`, ... that does
-not appear in any of the constraints.  Call it `vn`.  Then later the
-`newVariable` member can be called in this object at any time to generate an
-infinite stream of new variables starting with `vn`.
+computes the first variable from the list `v0`, `v1`, `v2`, ... such that it
+nor any variable after it in that list appears in any of the constraints.
+Call it `vn`.  Then later the `newVariable` member can be called in this
+object at any time to generate an infinite stream of new variables starting
+with `vn`.
 
         constructor : ( @contents... ) ->
             @nextNewVariableIndex = 0
@@ -370,7 +371,8 @@ parent addresses are of [ empty address ], we get null.
 The following function partitions the addresses of all subexpressions of
 the given expression into equivalence classes by equality of subexpressions
 at those addresses.  Each part in the partition is actually an object with
-two members, one begin the `subexpression`
+two members, one being the subexpression and the other being the set of
+addresses at which it occurs.
 
     partitionedAddresses = ( expression ) ->
         partition = []

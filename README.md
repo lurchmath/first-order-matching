@@ -18,11 +18,9 @@ Or install it from npm like so:
 npm install first-order-matching
 ```
 
-<!-- Then see the [API Reference
+Then see the [API Reference
 page](https://lurchmath.github.io/first-order-matching/site/api-reference) for what to do
-next. -->
-
-API Reference documentation forthcoming.
+next.
 
 ## Repository contents
 
@@ -32,6 +30,4 @@ API Reference documentation forthcoming.
 
 ## Documentation
 
-<!-- [See our documentation site here.](https://lurchmath.github.io/first-order-matching/)-->
-
-Other documentation forthcoming.
+[See our documentation site here.](https://lurchmath.github.io/first-order-matching/)

@@ -84,6 +84,10 @@
             <li><a href="#getting-started">Getting started</a></li>
             <li><a href="#using-openmath">Using OpenMath</a></li>
             <li><a href="#metavariables">Metavariables</a></li>
+            <li><a href="#expression-functions">Expression Functions</a></li>
+            <li><a href="#constraints">Constraints</a></li>
+            <li><a href="#matching">Matching</a></li>
+            <li><a href="#minimally-documented-code">Minimally Documented Code</a></li>
             <li><a href="#this-documentation-is-incomplete-more-coming-soon">This documentation is incomplete!  More coming soon...</a></li>
     </ul>
 </div></div>
@@ -104,7 +108,7 @@ or import from a CDN with the following one-liner.</p>
 </code></pre>
 
 <p>Then within any of your modules, import it as follows.</p>
-<pre><code class="js">matching = require( &quot;first-order-matching&quot; );
+<pre><code class="js">M = require( &quot;first-order-matching&quot; );
 </code></pre>
 
 <p>After that, any of the example code snippets in this documentation should
@@ -116,9 +120,12 @@ expressions.  To provide that need, this module depends upon <a href="http://www
 JavaScript implementation</a>.</p>
 <p>If you're using this from the command line, and installing it via <code>npm</code>,
 then <code>openmath-js</code> will automatically be installed as a dependency of this
-one.  If you're using this in the browser, be sure to import the OpenMath
-JavaScript code into your page before importing this one.  You can access
-it from the same CDN that you can access this module, as documented on its
+one.  Furthermore, it will be accessible through the <code>first-order-matching</code>
+module, as shown in the examples below.  (If you import this module as <code>M</code>,
+then the OpenMath constructor is accessible as <code>M.OM</code>.)</p>
+<p>If you're using this in the browser, be sure to import the OpenMath
+JavaScript code into your page before importing this one.  You can access it
+from the same CDN that you can access this module, as documented on its
 homepage.  (Follow the link above for the exact URL.)</p>
 <p>The remainder of this documentation will assume that you know how to create
 and use OpenMath objects to represent mathematical expressions.  See the
@@ -141,16 +148,227 @@ following functions are provided in this package for doing so.</p>
 </ul>
 <p>Examples:</p>
 <div class="runnable-example">
-x = OM.var( 'x' );
-matching.setMetavariable( x );
-x
+x = M.OM.var( 'x' );
+M.setMetavariable( x );
+M.isMetavariable( x );
 </div>
 
 <div class="runnable-example">
-y = OM.var( 'y' );
-matching.isMetavariable( y );
+y = M.OM.var( 'y' );
+M.isMetavariable( y );
 </div>
 
+<h2 id="expression-functions">Expression Functions</h2>
+<p>This module supports patterns that express the application of a function to
+a parameter, where the function maps OpenMath expressions to OpenMath
+expressions, as described in the whitepaper accessible from <a href="..">the main
+documentation page</a>.  We provide the following API for dealing
+with such objects.</p>
+<ul>
+<li><code>makeExpressionFunction(x,b)</code> - makes a new expression function with the
+   meaning &lambda;x.b, where x is a variable and b is any OpenMath
+   expression.  The x will be bound in the resulting expression.
+   An error is thrown if x is not a variable.</li>
+<li><code>isExpressionFunction(e)</code> - returns true if e is an expression of the
+   form created by the previous function, false otherwise.</li>
+<li><code>makeExpressionFunctionApplication(f,a)</code> - makes an expression whose
+   meaning is the application of an expression function f to an argument a.
+   Does not verify that f is an expression function; it need not be one, but
+   can be a metavariable, for example.</li>
+<li><code>isExpressionFunctionApplication(e)</code> - returns true if e is an expression
+   of the form created by the previous function, false otherwise.</li>
+<li><code>applyExpressionFunction(f,a)</code> - assumes that f has the form of an
+   expression function (i.e., passes <code>isExpressionFunction</code>) and applies it
+   to the OpenMath expression a.</li>
+<li><code>alphaEquivalent(f,g)</code> - returns true if and only if both f and g are
+   expression functions and they are <a href="https://en.wikipedia.org/wiki/Lambda_calculus#Alpha_equivalence">alpha
+   equivalent</a></li>
+</ul>
+<div class="runnable-example">
+ef = M.makeExpressionFunction(
+    M.OM.var( 'x' ), M.OM.simple( 'relation1.eq(x,x)' ) );
+M.applyExpressionFunction( ef, M.OM.int( 2 ) ).simpleEncode();
+</div>
+
+<div class="runnable-example">
+M.makeExpressionFunctionApplication(
+    M.OM.var( 'P' ), M.OM.var( 'x' ) ).simpleEncode();
+</div>
+
+<h2 id="constraints">Constraints</h2>
+<p>A constraint is a single pattern-expression pair to be solved by the
+matching algorithm.  A pattern is an expression containing metavariables,
+and a (plain) expression does not contain metavariables.  We provide this
+API for dealing with constraints.</p>
+<ul>
+<li><code>new Constraint(p,e)</code> - creates a new constraint from pattern p and
+   expression e</li>
+<li><code>C.pattern</code>, <code>C.expression</code> - access the pattern and expression given at
+   construction time</li>
+<li><code>C.copy()</code> - copies constraint C deeply</li>
+<li><code>C.equals(D)</code> - returns true if and only if constraints C and D are
+   structurally equal as pairs, ignoring any OpenMath attributes</li>
+</ul>
+<div class="runnable-example">
+C = new M.Constraint( M.OM.simple( 'a(b,c)' ), M.OM.simple( 'f(2,3)' ) );
+D = C.copy();
+[ C == D, C.equals( D ) ]
+</div>
+
+<p>A constraint list is an array of constraints, typically used internally by
+the matching algorithm to break single constraints down into smaller parts
+to be solved as a set.  Although the matching algorithm can be called on a
+set of constraints, it is typically called on a single constraint.  Even so,
+this API exists, but is <a href="#minimally-documented-code">documented minimally,
+below</a>, because it is of little interest to
+clients.</p>
+<h2 id="matching">Matching</h2>
+<p>The API provides one function for matching, and it is iterative, in the
+sense that if finds the first possible match (if any), and can be called
+again and again to produce more matches (if there are more).  For this
+reason, its return value is a structure with a few elements.</p>
+<ul>
+<li><code>match(constraint)</code> - yields a pair of values, one of three
+   possibilities:<ul>
+<li><code>[ null, null ]</code> - there are no solutions to the match (or no more
+  solutions, if this is not the first call)</li>
+<li><code>[ solution, null ]</code> - there is one solution, given as the first
+  element of the pair, and there are no more after it</li>
+<li><code>[ solution, argsArray ]</code> - there is more than one solution, but the
+  first is given as the first element of the pair, and the second
+  element of the pair is the array of additional arguments you can pass
+  to <code>match</code> to get it to find more solutions, as documented below.</li>
+</ul>
+</li>
+<li><code>match(constraint,x,y)</code> - if a previous call to <code>match</code> gave you an
+   <code>argsArray</code>, as documented immediately above, it will contain two values
+   (let's call them x and y) and if we pass them as extra arguments to
+   <code>match</code>, it will seek further solutions to the same matching problem,
+   returning one of the three possibilities above, as with the first call.</li>
+</ul>
+<p>Values returned from <code>match</code> are <code>ConstraintList</code> instances in which every
+member is a pair whose left hand side is a unique metavariable and whose
+right hand side is an OpenMath expression, thus embodying the mapping that
+the algorithm is designed to produce.  If <code>R</code> is such a result, you can get
+its list of constraints with <code>R.contents</code>.</p>
+<p>Examples:</p>
+<p>Matching f(x) against f(2) should produce x=2 if x is a metavariable.</p>
+<div class="runnable-example">
+pattern = M.OM.simple( 'f(x)' );
+M.setMetavariable( pattern.children[1] );
+expression = M.OM.simple( 'f(2)' );
+problem = new M.Constraint( pattern, expression );
+pair = M.nextMatch( problem );
+solution = pair[0].contents;
+for ( var i = 0 ; i < solution.length ; i++ )
+    console.log( solution[i].pattern.simpleEncode() + ' --> '
+               + solution[i].expression.simpleEncode() );
+</div>
+
+<p>Matching f(x) against g(2) should produce f=g and x=2 if both f and x are
+metavariables.</p>
+<div class="runnable-example">
+pattern = M.OM.simple( 'f(x)' );
+M.setMetavariable( pattern.children[0] );
+M.setMetavariable( pattern.children[1] );
+expression = M.OM.simple( 'g(2)' );
+problem = new M.Constraint( pattern, expression );
+pair = M.nextMatch( problem );
+solution = pair[0].contents;
+for ( var i = 0 ; i < solution.length ; i++ )
+    console.log( solution[i].pattern.simpleEncode() + ' --> '
+               + solution[i].expression.simpleEncode() );
+</div>
+
+<p>Matching f(x) against f(1,2) should produce no solutions.</p>
+<div class="runnable-example">
+pattern = M.OM.simple( 'f(x)' );
+M.setMetavariable( pattern.children[1] );
+expression = M.OM.simple( 'f(1,2)' );
+problem = new M.Constraint( pattern, expression );
+M.nextMatch( problem );
+</div>
+
+<p>Matching f(2) against f(2) should produce an empty solution (i.e., they
+match without instantiating any metavariables).</p>
+<div class="runnable-example">
+pattern = M.OM.simple( 'f(2)' );
+expression = M.OM.simple( 'f(2)' );
+problem = new M.Constraint( pattern, expression );
+pair = M.nextMatch( problem );
+pair[0].contents
+</div>
+
+<p>These have all been trivial examples.  For more complex examples, see the
+<a href="https://github.com/lurchmath/first-order-matching/blob/master/first-order-matching-spec.litcoffee#should-work-for-atomic-patterns">dozens more examples in the unit test suite, here</a>.
+Note that they construct expressions with the <code>quick</code> function, to make it
+easy to create patterns without calling <code>setMetavariable</code>.  That function is
+defined at the very top of the same file.</p>
+<h2 id="minimally-documented-code">Minimally Documented Code</h2>
+<p>The following routines are documented only minimally here, because they are
+almost never of use to the client of this package.  They are, however,
+exposed by the package in its <code>exports</code> member, so that they can be subject
+to <a href="https://github.com/lurchmath/first-order-matching/blob/master/first-order-matching-spec.litcoffee">the unit tests in this
+repository</a>.</p>
+<p>The terms and concepts mentioned in this terse documentation are defined in
+the whitepaper accessible from <a href="..">the main documentation page</a>.</p>
+<ul>
+<li><code>consistentPatterns(p1,p2,...)</code> - returns true if and only if the set of
+   patterns p1, p2, etc. is consistent, as defined in <a href="https://github.com/lurchmath/first-order-matching/blob/master/first-order-matching.litcoffee#consistent-patterns">the source code
+   documentation here</a>.</li>
+<li><code>findDifferencesBetween(e1,e2)</code> - an address set expressing the
+   differences between the expressions, as defined in the paper cited above.</li>
+<li><code>parentAddresses(addrs)</code> - set of parent addresses for all addresses in
+   a given set, as defined in the same paper.</li>
+<li><code>partitionedAddresses(e)</code> - all addresses for all subexpressions of e,
+   partitioned by equality of the subexpressions at those addresses</li>
+<li><code>expressionDepth(e)</code>, <code>sameDepthAncestors(e,addrs)</code>,
+   <code>differenceIterator(e1,e2)</code>, <code>subexpressionIterator(e)</code>,
+   <code>prefixIterator(e,iterator)</code>, <code>suffixIterator(iterator,e)</code>,
+   <code>composeIterator(iterator,func)</code>, <code>filterIterator(iterator,filter)</code>,
+   <code>concatenateIterators(first,second)</code> - See the thorough documentation for
+   these <a href="https://github.com/lurchmath/first-order-matching/blob/master/first-order-matching.litcoffee#iterators">in the source code itself</a>.</li>
+<li><code>multiReplace(e,addrs,other)</code>, <code>bindingConstraints1(pattern)</code>,
+   <code>satisfiesBindingConstraints1(solution,constraints)</code>,
+   <code>bindingConstraints2(pattern)</code>,
+   <code>satisfiesBindingConstraints2(solution,constraints)</code> - See the thorough documentation for
+   these <a href="https://github.com/lurchmath/first-order-matching/blob/master/first-order-matching.litcoffee#matching">in the source code itself</a>.</li>
+</ul>
+<p>Constraint list API:</p>
+<ul>
+<li><code>new ConstraintList(c1,c2,...)</code> - creates a constraint list given a list
+   of constraints</li>
+<li><code>CL.contents</code> - the array used for internal storage, and which is
+   publicly accessible, to be looped over/read/etc.</li>
+<li><code>CL.length()</code> - number of constraints in the constraint list CL</li>
+<li><code>CL.copy()</code> - a deep copy with the same order</li>
+<li><code>CL.equals(other)</code> - equality comparison that ignores order, and uses the
+   <code>equals</code> member of the <code>Constraint</code> class</li>
+<li><code>CL.plus(c1,c2,...)</code> - a new constraint list created by adding the given
+   constraints to the list CL (deep copy, not in-place modification)</li>
+<li><code>CL.minus(c1,c2,...)</code> - a new constraint list created by removing the
+   given constraints from the list CL (if they were there, doing nothing if
+   they were not -- deep copy, not in-place modification)</li>
+<li><code>CL.indexAtWhich(P)</code> - first index at which the predicate P holds of the
+   constraint at that index in the list, or -1 if there is no such index</li>
+<li><code>CL.firstSatisfying(P)</code> - constraint at <code>CL.indexAtWhich(P)</code>, or null</li>
+<li><code>CL.firstPairSatisfying(P)</code> - assuming P is a binary predicate accepting
+   two constraints, yields the first pair of indices on whose constraints P
+   returns true, by dictionary ordering the pair of the indices</li>
+<li><code>CL.nextNewVariable()</code> - generate a new variable that does not appear in
+   any of the constraints in the list CL; this is an iterator that creates
+   an infinite stream of results, different at each call</li>
+<li><code>CL.isFunction()</code> - whether CL is a function, when viewed as a mapping
+   from the space of metavariables to the space of expressions.  To be so,
+   the constraint list must contain only constraints whose left hand sides
+   are metavariables, and none msut appear in more than one constraint.</li>
+<li><code>CL.lookup(x)</code> - if <code>CL.isFunction()</code> then you can look up variables and
+   get back expressions.  Pass a variable as x and this routine does so,
+   returning null if it finds no result.</li>
+<li><code>CL.apply(e)</code> - if <code>CL.isFunction()</code>, then you can apply the constraint
+   list CL to the expression e and all metavariables x appearing in e will
+   be replaced simultaneously with the respective result of <code>CL.lookup(x)</code></li>
+</ul>
 <h2 id="this-documentation-is-incomplete-more-coming-soon">This documentation is incomplete!  More coming soon...</h2>
 <script src="https://embed.runkit.com"></script>
 
@@ -162,7 +380,7 @@ for ( var i = 0 ; i < elements.length ; i++ ) {
     var notebook = RunKit.createNotebook( {
         element: elements[i],
         source: source,
-        preamble: 'matching = require( "first-order-matching" );\nOM = require( "openmath-js" ).OM;'
+        preamble: 'M = require( "first-order-matching" );'
     } );
 }
 </script></div>
