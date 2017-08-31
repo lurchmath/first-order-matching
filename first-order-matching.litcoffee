@@ -2,16 +2,16 @@
 # The Matching Module
 
 This module implements the algorithm documented thoroughly in an unpublished
-paper entitled "A First Matching Algorithm for Lurch."  Contact the owners
-of this source code repository for a copy.
+paper entitled "A Limited First Matching Algorithm," in the documentation
+for this package.
 
-The following lines ensure that this file works in Node.js, for testing.
+If this is being used from Node.js, the following code will import the
+requisite OpenMath data structures.  If it is being used from the browser,
+you should include the source for the OpenMath module first.
 
-    if not exports? then exports = module?.exports ? window
-    # if require? then { OM, OMNode } = require './openmath-duo'
-    # The above change is temporary, during repository reorganization.
-    # It breaks the test suite for now, but will be fixed as part of the
-    # Repository reorganisation.
+See [openmath-js on npm](http://www.npmjs.org/package/openmath-js).
+
+    if require? then { OM, OMNode } = require 'openmath-js'
 
 ## Metavariables
 
@@ -20,7 +20,7 @@ we create one instance here for use repeatedly.  We also create an instance
 of a string that signifies a boolean true value, because that will be the
 value of the attribute whose key is the metavariable symbol.
 
-    metavariableSymbol = OM.symbol 'metavariable', 'lurch'
+    metavariableSymbol = OM.symbol 'metavariable', 'FirstOrderMatching'
     trueValue = OM.string 'true'
 
 We begin with a routine that marks a variable as a metavariable.  It accepts
@@ -36,7 +36,7 @@ For instance, if we wished to express the pattern "forall x, P(x)" but with
 the forall symbol replaced by a metavariable, it would need to be a symbol
 in order for the expression to be a valid OpenMath object.)
 
-    exports.setMetavariable = setMetavariable = ( variable ) ->
+    setMetavariable = ( variable ) ->
         if variable not instanceof OMNode or \
            variable.type not in [ 'v', 'sy' ] then return
         variable.setAttribute metavariableSymbol, trueValue.copy()
@@ -44,14 +44,14 @@ in order for the expression to be a valid OpenMath object.)
 To undo the above action, call the following function, which removes the
 attribute.
 
-    exports.clearMetavariable = clearMetavariable = ( metavariable ) ->
+    clearMetavariable = ( metavariable ) ->
         metavariable.removeAttribute metavariableSymbol
 
 To query whether a variable has been marked as a metaviariable, use the
 following routine, which tests for the presence of the attribute in
 question.
 
-    exports.isMetavariable = isMetavariable = ( variable ) ->
+    isMetavariable = ( variable ) ->
         variable instanceof OMNode and variable.type in [ 'v', 'sy' ] and \
             variable.getAttribute( metavariableSymbol )?.equals trueValue
 
@@ -62,34 +62,30 @@ a parameter, where the function maps OpenMath expressions to OpenMath
 expressions, as described in the paper cited at the top of this file.  We
 will represent a function with the following binding head symbol.
 
-    expressionFunction = OM.symbol 'EF', 'lurch'
+    expressionFunction = OM.symbol 'EF', 'FirstOrderMatching'
 
 We express the application of such a function to an argument as an
 application of the following symbol.
 
-    expressionFunctionApplication = OM.symbol 'EFA', 'lurch'
+    expressionFunctionApplication = OM.symbol 'EFA', 'FirstOrderMatching'
 
-So for example, `P(x)` would be expressed as `OM.simple 'lurch.EFA(P,X)'`
+So for example, `P(x)` would be expressed as `OM.simple 'FirstOrderMatching.EFA(P,X)'`
 and the map from input `p` to output `h(x,p,p)` as `OM.simple
-'lurch.EF[p,h(x,p,p)]'`.
+'FirstOrderMatching.EF[p,h(x,p,p)]'`.
 
 We therefore construct a few convenience functions for testing whether an
 expression is of one of the types above, and for constructing expressions of
 those types.
 
-    exports.makeExpressionFunction =
     makeExpressionFunction = ( variable, body ) =>
         if variable.type isnt 'v' then throw 'When creating an expression
             function, its parameter must be a variable'
         OM.bin expressionFunction, variable, body
-    exports.isExpressionFunction =
     isExpressionFunction = ( expression ) =>
         expression.type is 'bi' and expression.variables.length is 1 and \
             expression.symbol.equals expressionFunction
-    exports.makeExpressionFunctionApplication =
     makeExpressionFunctionApplication = ( func, argument ) =>
         OM.app expressionFunctionApplication, func, argument
-    exports.isExpressionFunctionApplication =
     isExpressionFunctionApplication = ( expression ) =>
         expression.type is 'a' and expression.children.length is 3 and \
             expression.children[0].equals expressionFunctionApplication
@@ -97,7 +93,6 @@ those types.
 You can also apply expression functions to expressions (unsurprisingly, as
 that is their purpose).
 
-    exports.applyExpressionFunction =
     applyExpressionFunction = ( func, expression ) ->
         result = func.body.copy()
         result.replaceFree func.variables[0], expression
@@ -106,7 +101,7 @@ that is their purpose).
 We also include a function that tests whether two expression functions are
 alpha equivalent.
 
-    exports.alphaEquivalent = alphaEquivalent = ( func1, func2 ) ->
+    alphaEquivalent = ( func1, func2 ) ->
         index = 0
         newVar = -> OM.var "v#{index}"
         isNewVar = ( expr ) -> expr.equals newVar()
@@ -129,7 +124,7 @@ The motivation is that it would be inconsistent to demand that one pattern
 instantiate a metavariable as an expression function, but another pattern
 demand that the same metavariable be instantiated as a plain expression.
 
-    exports.consistentPatterns = consistentPatterns = ( patterns... ) ->
+    consistentPatterns = ( patterns... ) ->
         nonFunctionMetavariables = [ ]
         functionMetavariables = [ ]
         for pattern in patterns
@@ -152,7 +147,7 @@ interpreted as a pattern, and the second as an expression.  Constraints can
 be used as part of a problem to solve, or as part of a solution.  When they
 are part of a solution, the pattern is always a lone metavariable.
 
-    exports.Constraint = Constraint = class
+    class Constraint
 
 Construct a constraint by providing the pattern and the expression.
 
@@ -175,7 +170,7 @@ functions added for adding, removing, and searching in a way unique to lists
 of constraints.  It can be used to express a problem as a list of
 constraints, or a solution as a list of metavariable-expression pairs.
 
-    exports.ConstraintList = ConstraintList = class
+    class ConstraintList
 
 Construct a constraint list by providing zero or more constraints to add to
 it initially.  Besides simply storing those constraints, this function also
@@ -337,7 +332,6 @@ This function computes the set of addresses at which two expressions differ.
 It uses an internal recursive function that fills a list that's initially
 empty.
 
-    exports.findDifferencesBetween =
     findDifferencesBetween = ( expression1, expression2 ) ->
         differences = [ ]
         recur = ( A, B ) ->
@@ -362,7 +356,6 @@ those addresses.  This function does so, but using lists in place of sets.
 Note that the empty address has no parent, so if we ask what the set of
 parent addresses are of [ empty address ], we get null.
 
-    exports.parentAddresses =
     parentAddresses = ( addresses ) ->
         results = [ ]
         for address in addresses
@@ -379,7 +372,6 @@ the given expression into equivalence classes by equality of subexpressions
 at those addresses.  Each part in the partition is actually an object with
 two members, one begin the `subexpression`
 
-    exports.partitionedAddresses =
     partitionedAddresses = ( expression ) ->
         partition = []
         recur = ( subexpression ) ->
@@ -416,7 +408,7 @@ enumerate $A$ by simply repeatedly computing parent addresses of the entire
 set.  This makes the enumeration linear.  Consequently, we need the
 following handy function.
 
-    exports.expressionDepth = expressionDepth = ( expression ) ->
+    expressionDepth = ( expression ) ->
         children = [ expression.children..., expression.variables... ]
         if expression.body then children.push expression.body
         if expression.symbol then children.push expression.symbol
@@ -431,7 +423,6 @@ address `[]` is an ancestor to every address, and so the set `[ [] ]` will
 always be a valid same-depth ancestor set to the input (though possibly not
 the minimum depth one).
 
-    exports.sameDepthAncestors =
     sameDepthAncestors = ( expression, addresses ) ->
 
 Try to find a pair of addresses of different depths.
@@ -468,7 +459,6 @@ Now we can use those two functions to build the difference iterator
 specified at the start of this section.  Note that it assumes that the two
 expressions passed in are not equal, so that there exists a difference set.
 
-    exports.differenceIterator =
     differenceIterator = ( expression1, expression2 ) ->
         nextAddressSet = sameDepthAncestors expression1, \
             findDifferencesBetween expression1, expression2
@@ -501,7 +491,6 @@ For each $A_{u_i}$, we enumerate its nonempty subsets, and call them
 $S_{i,1},\ldots,S_{i,m_i}$.  This iterator returns the list
 $S_{1,1},S_{1,2},\ldots,S_{n,m_n}$, followed by the string `'done'`.
 
-    exports.subexpressionIterator =
     subexpressionIterator = ( expression ) ->
         partition = partitionedAddresses expression
         state =
@@ -531,7 +520,7 @@ The following function takes an iterator and an element, and yields a new
 iterator whose return list is the same as that of the given iterator, but
 prefixed with the new element (just once).
 
-    exports.prefixIterator = prefixIterator = ( element, iterator ) ->
+    prefixIterator = ( element, iterator ) ->
         firstCallHasHappened = no
         ->
             if firstCallHasHappened then return iterator()
@@ -542,7 +531,7 @@ The following function takes an iterator and an element, and yields a new
 iterator whose return list is the same as that of the given iterator, but
 suffixed with the new element (just once).
 
-    exports.suffixIterator = suffixIterator = ( iterator, element ) ->
+    suffixIterator = ( iterator, element ) ->
         suffixHasHappened = no
         ->
             result = iterator()
@@ -556,14 +545,14 @@ returning a new iterator that returns a list each of whose values is the
 same as the old iterator would have returned, but first passed through the
 given function.
 
-    exports.composeIterator = composeIterator = ( iterator, func ) ->
+    composeIterator = ( iterator, func ) ->
         -> if result = iterator() then func result else null
 
 The following function takes an iterator and a filter.  It yields a new
 iterator that yields a subsequence of what the given iterator yields,
 specifically exactly those results that pass the test of the filter.
 
-    exports.filterIterator = filterIterator = ( iterator, filter ) ->
+    filterIterator = ( iterator, filter ) ->
         ->
             next = iterator()
             while next and not filter next then next = iterator()
@@ -574,7 +563,7 @@ a new iterator that returns first all the items from the first iterator (not
 including the terminating null sequence), followed by all the items from the
 second iterator (including the terminating null sequence).
 
-    exports.concatenateIterators = concatenateIterators =
+    concatenateIterators =
         ( first, second ) -> -> first() or second()
 
 ## Matching
@@ -584,7 +573,6 @@ subexpressions of a larger expression at once.  The following function
 accomplishes this.  It replaces every subexpression of the given expression
 at any one of the given addresses with a copy of the replacement expression.
 
-    exports.multiReplace =
     multiReplace = ( expression, addresses, replacement ) ->
         result = expression.copy()
         for address in addresses
@@ -602,7 +590,7 @@ This first function extracts from a pattern a list of metavariable pairs
 s(m1) appearing free in s(m2).  Pairs are represented as instances of the
 `Constraint` class, and lists of pairs as a `ConstraintList`.
 
-    exports.bindingConstraints1 = bindingConstraints1 = ( pattern ) ->
+    bindingConstraints1 = ( pattern ) ->
         result = new ConstraintList()
         isBinder = ( d ) -> d.type is 'bi'
         for binding in pattern.descendantsSatisfying isBinder
@@ -621,7 +609,6 @@ This second function tests whether a given solution (expressed as a
 another `ConstraintList` instance) computed by `bindingConstraints1`.  It
 returns a boolean.
 
-    exports.satisfiesBindingConstraints1 =
     satisfiesBindingConstraints1 = ( solution, constraints ) ->
         for constraint in constraints.contents
             sv = solution.lookup constraint.pattern
@@ -635,7 +622,7 @@ pair means the restriction that a solution s must have s(x) free to have
 s(P) applied to it.  Pairs are represented as instances of the `Constraint`
 class, and lists of pairs as a `ConstraintList`.
 
-    exports.bindingConstraints2 = bindingConstraints2 = ( pattern ) ->
+    bindingConstraints2 = ( pattern ) ->
         result = new ConstraintList()
         for efa in pattern.descendantsSatisfying \
                 isExpressionFunctionApplication
@@ -650,7 +637,6 @@ This fourth function tests whether a given solution (expressed as a
 another `ConstraintList` instance) computed by `bindingConstraints2`.  It
 returns a boolean.
 
-    exports.satisfiesBindingConstraints2 =
     satisfiesBindingConstraints2 = ( solution, constraints ) ->
         for constraint in constraints.contents
             ef = solution.lookup constraint.pattern
@@ -686,12 +672,11 @@ development purposes.
         if cls is null then return null
         '[\n' + ( "\t#{CLToString(cl)}" for cl in cls ).join( '\n' ) + '\n]'
     matchDebugOn = no
-    exports.setMatchDebug = ( onoff ) -> matchDebugOn = onoff
+    setMatchDebug = ( onoff ) -> matchDebugOn = onoff
     matchDebug = ( args... ) -> if matchDebugOn then console.log args...
 
 Now, the matching algorithm.
 
-    exports.nextMatch =
     nextMatch = ( constraints,
                   solution = new ConstraintList(),
                   iterator = null ) ->
@@ -973,3 +958,39 @@ iterator.
             nextArguments[2] = concatenateIterators \
                 nextArguments[2], iterator
             return [ nextResult, nextArguments ]
+
+The following lines ensure that this file works in Node.js, for testing.
+
+    if exports?
+        exports.setMetavariable = setMetavariable
+        exports.clearMetavariable = clearMetavariable
+        exports.isMetavariable = isMetavariable
+        exports.makeExpressionFunction = makeExpressionFunction
+        exports.isExpressionFunction = isExpressionFunction
+        exports.makeExpressionFunctionApplication = makeExpressionFunctionApplication
+        exports.isExpressionFunctionApplication = isExpressionFunctionApplication
+        exports.applyExpressionFunction = applyExpressionFunction
+        exports.alphaEquivalent = alphaEquivalent
+        exports.consistentPatterns = consistentPatterns
+        exports.Constraint = Constraint
+        exports.ConstraintList = ConstraintList
+        exports.findDifferencesBetween = findDifferencesBetween
+        exports.parentAddresses = parentAddresses
+        exports.partitionedAddresses = partitionedAddresses
+        exports.expressionDepth = expressionDepth
+        exports.sameDepthAncestors = sameDepthAncestors
+        exports.differenceIterator = differenceIterator
+        exports.subexpressionIterator = subexpressionIterator
+        exports.prefixIterator = prefixIterator
+        exports.suffixIterator = suffixIterator
+        exports.composeIterator = composeIterator
+        exports.filterIterator = filterIterator
+        exports.concatenateIterators = concatenateIterators
+        exports.multiReplace = multiReplace
+        exports.bindingConstraints1 = bindingConstraints1
+        exports.satisfiesBindingConstraints1 = satisfiesBindingConstraints1
+        exports.bindingConstraints2 = bindingConstraints2
+        exports.satisfiesBindingConstraints2 = satisfiesBindingConstraints2
+        exports.setMatchDebug = setMatchDebug
+        exports.nextMatch = nextMatch
+

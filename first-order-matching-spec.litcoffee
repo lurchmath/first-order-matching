@@ -15,8 +15,8 @@ we'll use when testing.
       multiReplace, nextMatch, setMatchDebug, bindingConstraints1,
       bindingConstraints2, satisfiesBindingConstraints1,
       satisfiesBindingConstraints2 } =
-        matching = require '../src/matching-duo'
-    { OM, OMNode } = require '../src/openmath-duo'
+        matching = require './first-order-matching'
+    { OM, OMNode } = require 'openmath-js'
 
 Several times in this spec we will want to use the convention that a
 variable beginning with an underscore should have the underscore removed,
@@ -2131,7 +2131,7 @@ Second, the list of partial solutions involving b and Q:
             left = quick 'Rule(_P_of__a,_Q_of__b)'
             right = quick 'Rule(eq(3,3),gt(5,4))'
             setMatchDebug off
-            result = someMatches left, right, 50, yes
+            result = someMatches left, right, 50, no
             setMatchDebug off
             expect( result.length ).toBe 30
             for i in [0..5]
