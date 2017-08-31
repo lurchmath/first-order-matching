@@ -993,4 +993,4 @@ The following lines ensure that this file works in Node.js, for testing.
         exports.satisfiesBindingConstraints2 = satisfiesBindingConstraints2
         exports.setMatchDebug = setMatchDebug
         exports.nextMatch = nextMatch
-
+        exports.OM = exports.OMNode = OM

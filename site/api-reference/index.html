@@ -82,6 +82,8 @@
     <ul class="nav bs-sidenav">
         <li class="main active"><a href="#api-reference">API Reference</a></li>
             <li><a href="#getting-started">Getting started</a></li>
+            <li><a href="#using-openmath">Using OpenMath</a></li>
+            <li><a href="#metavariables">Metavariables</a></li>
             <li><a href="#this-documentation-is-incomplete-more-coming-soon">This documentation is incomplete!  More coming soon...</a></li>
     </ul>
 </div></div>
@@ -93,7 +95,7 @@
 <p>Import the minified JavaScript, which you can <a href="https://raw.githubusercontent.com/lurchmath/openmath-js/master/openmath.js">download from our repository
 directly</a>
 or import from a CDN with the following one-liner.</p>
-<pre><code class="html">&lt;script src='https://cdn.jsdelivr.net/npm/first-order-matching@1.0.2/first-order-matching.js'&gt;&lt;/script&gt;
+<pre><code class="html">&lt;script src='https://cdn.jsdelivr.net/npm/first-order-matching@1.0.3/first-order-matching.js'&gt;&lt;/script&gt;
 </code></pre>
 
 <h3 id="from-the-command-line">From the command line</h3>
@@ -107,9 +109,46 @@ or import from a CDN with the following one-liner.</p>
 
 <p>After that, any of the example code snippets in this documentation should
 function as-is.</p>
-<p>Example:</p>
+<h2 id="using-openmath">Using OpenMath</h2>
+<p>In order to do work with mathematical expressions, there needs to be some
+data structure for storing and some algorithms for manipulating those
+expressions.  To provide that need, this module depends upon <a href="http://www.npmjs.org/package/openmath-js">an OpenMath
+JavaScript implementation</a>.</p>
+<p>If you're using this from the command line, and installing it via <code>npm</code>,
+then <code>openmath-js</code> will automatically be installed as a dependency of this
+one.  If you're using this in the browser, be sure to import the OpenMath
+JavaScript code into your page before importing this one.  You can access
+it from the same CDN that you can access this module, as documented on its
+homepage.  (Follow the link above for the exact URL.)</p>
+<p>The remainder of this documentation will assume that you know how to create
+and use OpenMath objects to represent mathematical expressions.  See the
+documentation linked to above if needed.</p>
+<h2 id="metavariables">Metavariables</h2>
+<p>Matching compares two expressions, one containing metavariables, and
+attempts to create a substitution (a mapping from metavariables to
+expressions) that, when applied to the expression containing metavariables,
+makes the two expressions equal.</p>
+<p>Thus it is necessary to be able to flag certain variables in our expressions
+as metavariables, and to detect which variables are metavariables.  The
+following functions are provided in this package for doing so.</p>
+<ul>
+<li><code>setMetavariable(x)</code> - takes an OpenMath variable as input and adds to it
+   an attribute that marks it as a metavariable</li>
+<li><code>clearMetavariable(x)</code> - removes the attribute added by the previous
+   function</li>
+<li><code>isMetavariable(x)</code> - true if and only if x is an OpenMath variable with
+   the flag added by <code>setMetavariable()</code></li>
+</ul>
+<p>Examples:</p>
 <div class="runnable-example">
-matching.isMetavariable
+x = OM.var( 'x' );
+matching.setMetavariable( x );
+x
+</div>
+
+<div class="runnable-example">
+y = OM.var( 'y' );
+matching.isMetavariable( y );
 </div>
 
 <h2 id="this-documentation-is-incomplete-more-coming-soon">This documentation is incomplete!  More coming soon...</h2>
@@ -123,7 +162,7 @@ for ( var i = 0 ; i < elements.length ; i++ ) {
     var notebook = RunKit.createNotebook( {
         element: elements[i],
         source: source,
-        preamble: 'matching = require( "first-order-matching" );'
+        preamble: 'matching = require( "first-order-matching" );\nOM = require( "openmath-js" ).OM;'
     } );
 }
 </script></div>
