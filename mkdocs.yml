@@ -1,0 +1,5 @@
+site_name: First-Order Matching Documentation
+pages:
+    - Home: index.md
+    - Source: source-code.md
+    - Reference: api-reference.md

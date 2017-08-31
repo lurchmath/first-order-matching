@@ -1,1 +1,5 @@
+.DS_Store
 node_modules/
+paper/*.aux
+paper/*.log
+paper/*.synctex.gz
