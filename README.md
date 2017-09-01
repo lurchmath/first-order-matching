@@ -10,7 +10,7 @@ A limited JavaScript implementation of a matching algorithm for expressions of f
 Import this into your site like so:
 
 ```html
-<script src='https://cdn.jsdelivr.net/npm/first-order-matching@1.0.5/first-order-matching.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/first-order-matching@1/first-order-matching.js'></script>
 ```
 
 Or install it from npm like so:
@@ -25,7 +25,7 @@ next.
 ## Repository contents
 
  * [Source code, in Literate CoffeeScript](first-order-matching.litcoffee)
- * [Compiled and minified JavaScript from a CDN](https://cdn.jsdelivr.net/npm/first-order-matching@1.0.5/first-order-matching.js) that you can import directly into your projects from that URL
+ * [Compiled and minified JavaScript from a CDN](https://cdn.jsdelivr.net/npm/first-order-matching@1/first-order-matching.js) that you can import directly into your projects from that URL
  * [A whitepaper detailing the algorithm's limitations and capabilities](https://github.com/lurchmath/first-order-matching/blob/master/paper/first-order-matching-in-detail.pdf)
 
 ## Documentation
