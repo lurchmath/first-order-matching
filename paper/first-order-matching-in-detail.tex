@@ -101,11 +101,7 @@ Introduce a new set of variables, not in $E$, called \emph{metavariables}.  One 
 In OpenMath, we can attach an attribute whose key is ``metavariable'' and whose value is ``true'' to mark variables as metavariables.  The exact way of marking variables is unimportant, but we will assume that both reading and writing this attribute is a trivial operation.  Call the set of metavariables $M$, a set which is disjoint from $E$.
 
 \begin{dfn}[expression function, expression function application]\label{D:efa}
-Recall the \emph{functional notation} defined at the start of this document, as in $P(x)$.  In such a syntax, we call the $P$ an \emph{expression function,} because it is a function whose inputs and outputs are expressions (elements of $E$).  We will call expressions of the form $P(x)$ (such as $P(a)$ and $P(b)$) \emph{expression function applications} for obvious reasons.  Expression function applications must obey two constraints.
-\begin{enumerate}
-\item	The parameters to expression functions cannot contain other expression function applications.  In other words, we do not nest expression function applications (no $P(f(x))$, nor $P(x)(y)$).
-\item	The expression function must be a metavariable.
-\end{enumerate}
+When $P:E\to E$ we call $P$ an \emph{expression function.}  When $x\in E$ and $P:E\to E$, we may write $P(x)$ with the usual meaning, the application of $P$ to $x$.  However, when $P\in M$, we may also write $P(x)$, and we call such a form an \emph{expression function application.}  Expression function applications cannot contain other expression function applications (no nesting, as in $P(Q(x))$).
 \end{dfn}
 
 Because expression function application is not the same operation as function application in $E$, expression function applications are not themselves elements of $E$.  So the syntactic form $P(a)$ is not in $E$, for two reasons:  first, because the application operation is not in $E$, and second, because $P\in M$ and $M\cap E=\emptyset$.
