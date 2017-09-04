@@ -2,7 +2,7 @@
     "docs": [
         {
             "location": "/", 
-            "text": "First-Order Matching Documentation\n\n\nGet started now\n\n\nTo import this code via a CDN or \nnpm\n, check out the \nAPI Reference\nPage\n.\n\n\nBackground\n\n\nUnification\n\nis an algorithm that takes two expressions that may contain metavariables\nand produces an instantiation of the metavariables that would make the two\nexpressions equal.  Matching is a special case of unification in which only\none of the two expressions may contain metavariables.\n\n\nMore Information\n\n\nThe following additional information is available in this documentation.\n\n\n\n\nWhitepaper\n - documents the capabilities and limitations of the algorithm in this repository, with proof of correctness\n\n\nSource Code\n - see the source and/or import it into your\n   own project\n\n\nAPI Reference\n - how to use the various functions and\n   objects provided", 
+            "text": "First-Order Matching Documentation\n\n\nGet started now\n\n\nTo import this code via a CDN or \nnpm\n, check out the \nAPI Reference\nPage\n.\n\n\nBackground\n\n\nUnification\n\nis an algorithm that takes two expressions that may contain metavariables\nand produces an instantiation of the metavariables that would make the two\nexpressions equal.  Matching is a special case of unification in which only\none of the two expressions may contain metavariables.\n\n\nMore Information\n\n\nThe following additional information is available in this documentation.\n\n\n\n\nWhitepaper\n - documents the capabilities and limitations of the algorithm in this repository, with proof of correctness\n\n\nSource Code\n - see the source and/or import it into your\n   own project\n\n\nAPI Reference\n - how to use the various functions and\n   objects provided\n\n\n\n\nMore documentation may be added here in the future. For now you can \nview this repository \n.", 
             "title": "Home"
         }, 
         {
@@ -22,7 +22,7 @@
         }, 
         {
             "location": "/#more-information", 
-            "text": "The following additional information is available in this documentation.   Whitepaper  - documents the capabilities and limitations of the algorithm in this repository, with proof of correctness  Source Code  - see the source and/or import it into your\n   own project  API Reference  - how to use the various functions and\n   objects provided", 
+            "text": "The following additional information is available in this documentation.   Whitepaper  - documents the capabilities and limitations of the algorithm in this repository, with proof of correctness  Source Code  - see the source and/or import it into your\n   own project  API Reference  - how to use the various functions and\n   objects provided   More documentation may be added here in the future. For now you can  view this repository  .", 
             "title": "More Information"
         }, 
         {
