@@ -1436,7 +1436,8 @@ matches that the iteration of the `nextMatch` function will eventually give.
 We create the following function to make this easier.
 
 It also embodies the idea that it will not return matches that do not pass
-the binding constraints embodied in
+the binding constraints embodied in the given left and right hand sides of
+the matching problem.
 
         someMatches = ( LHS, RHS, number = 10, debug = no ) ->
             results = [ ]
