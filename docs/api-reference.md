@@ -371,7 +371,7 @@ W.postMessage( [ "newProblem", "#1", LHS.encode(), RHS.encode() ] );
 W.onmessage = function ( event ) {
     console.log( "Heard back from the worker with this:", event.data );
 }
-W.getSolution( name );
+W.postMessage( [ "getSolution", name ] );
 ```
 
 This instructs the worker to compute a solution to the matching problem with
