@@ -330,6 +330,9 @@ non-WebWorker use of the module, as given in the previous sections.  It also
 assumes that you've read the [getting started section](#getting-started) so
 that you know how to import this module into a WebWorker.
 
+See the [test-worker.html](../test-worker.html) file for a (very small)
+example.
+
 Assuming you've created a worker `W` as in that section, you can then
 interact with it through four types of messages.
 
