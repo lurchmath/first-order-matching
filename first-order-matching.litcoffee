@@ -1030,7 +1030,8 @@ right-hand sides for its one constraint.  Each must be an `OMNode` instance.
                 args : [ new ConstraintList new Constraint LHS, RHS ]
 
 This function attempts to find the next solution to the given problem.  It
-begins by calling `nextMatch`, the workhorse of this module.  The results will be an object with these attributes:
+begins by calling `nextMatch`, the workhorse of this module.  The results
+will be an object with these attributes:
  * `name` - the name of the problem, as given to this function
  * `success` - a boolean true or false, true meaning that there was another
    solution to fetch, and it has been fetched, false meaning there are no

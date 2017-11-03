@@ -1,0 +1,48 @@
+<!--
+   -  This file is a simple illustration of the minimal use of the
+   -  First Order Matching module in a WebWorker.
+   -  It requires the first-order-matching.js script from this repository,
+   -  as well as the openmath.js script from the following repository:
+   -    https://github.com/lurchmath/openmath-js
+   -  See the API documentation in this repository for details.
+  -->
+<html>
+    <head>
+        <!--
+           -  Import the OpenMath script so we can construct expressions.
+           -  Although this script is available from a CDN, it is imported
+           -  by the first-order-matching.js script below, and thus needs to
+           -  be in this same folder anyway.
+           -
+           -  This file will not load successfully from this repository,
+           -  however, because we do not keep in this repository a copy of
+           -  openmath.js.  Users can fetch it from this link:
+           -    https://raw.githubusercontent.com/lurchmath/openmath-js/master/openmath.js
+          -->
+        <script src='openmath.js'></script>
+        <script>
+            // Make a new WebWorker that loads the matching module.
+            var W = new Worker( 'first-order-matching.js' );
+            // Construct a simple OpenMath expression, the integer 5.
+            var x = OM.int( 5 );
+            // Tell the worker about a new matching problem:
+            // Does 5 match 5?
+            // (Answer: yes, of course, but more specifically, it does so
+            // in exactly one way, and that way is with a metavariable
+            // instantiation equal to the empty map.)
+            W.postMessage( [ 'newProblem', 1, x.encode(), x.encode() ] );
+            // Prepare to receive messages from the worker and dump them
+            // directly into the page.
+            W.onmessage = function ( event ) {
+                document.write( JSON.stringify( event.data ) );
+            }
+            // Ask the worker for the first (and, in this case, only)
+            // solution to the matching problem constructed above.
+            W.postMessage( [ 'getSolution', 1 ] );
+            // As soon as this page is loaded, it should put some JSON into
+            // the page representing this solution.  It will look like this:
+            //   {"name":1,"solution":{},"count":1,"success":true}
+            // See the API docs for information on each of those fields.
+        </script>
+    </head>
+</html>

@@ -45,7 +45,8 @@ W = new Worker( "path/to/first-order-matching.js" );
 // it imports openmath.js itself, from the same folder
 ```
 
-This exposes an asynchronous API documented [below](#webworker-api).
+This exposes an asynchronous API documented [below](#webworker-api).  See
+the [test-worker.html](../test-worker.html) file for a (very small) example.
 
 ## Using OpenMath
 
