@@ -13,6 +13,18 @@ See [openmath-js on npm](http://www.npmjs.org/package/openmath-js).
 
     if require? then { OM, OMNode } = require 'openmath-js'
 
+If this file is being used within a WebWorker, then we detect whether it is
+within Node.js (for testing by developers) or within a browser's WebWorker.
+Depending on which it is, we include the OpenMath module in a different way.
+In the testing case, we assume it has been installed by npm in
+`node_modules`.  In the browser case, we assume the developer has placed it
+in the same folder as this script.
+
+    if WorkerGlobalScope? # browser case
+        importScripts 'openmath.js'
+    else if self?.importScripts? # node case
+        importScripts 'node_modules/openmath-js/openmath.js'
+
 ## Metavariables
 
 All of the routines in this section make use of a single common symbol, so
@@ -961,6 +973,8 @@ iterator.
                 nextArguments[2], iterator
             return [ nextResult, nextArguments ]
 
+## Context
+
 The following lines ensure that this file works in Node.js, for testing.
 
     if exports?
@@ -996,3 +1010,111 @@ The following lines ensure that this file works in Node.js, for testing.
         exports.setMatchDebug = setMatchDebug
         exports.nextMatch = nextMatch
         exports.OM = exports.OMNode = OM
+
+And the following lines test to see if this function is running in a
+[WebWorker](https://www.w3.org/TR/workers/), and if so, they install an
+event handler for messages posted from the main thread, which exposes the
+key API from this module to the outside, through message-passing.
+
+    if WorkerGlobalScope? or self?.importScripts?
+        ProblemStore = { }
+
+This function adds a new problem to the problem store, with given left- and
+right-hand sides for its one constraint.  Each must be an `OMNode` instance.
+
+        newProblem = ( name, LHS, RHS ) ->
+            ProblemStore[name] =
+                bc1 : bindingConstraints1 LHS
+                bc2 : bindingConstraints2 LHS
+                results : [ ]
+                args : [ new ConstraintList new Constraint LHS, RHS ]
+
+This function attempts to find the next solution to the given problem.  It
+begins by calling `nextMatch`, the workhorse of this module.  The results will be an object with these attributes:
+ * `name` - the name of the problem, as given to this function
+ * `success` - a boolean true or false, true meaning that there was another
+   solution to fetch, and it has been fetched, false meaning there are no
+   more solutions to fetch
+ * `count` - the total number of solutions fetched so far, which will be one
+   more than the last time iff `success` is true (or zero if there never
+   were any solutions)
+ * `solution` - an object mapping metavariable names to the JSON string
+   representations of OM trees, which can be decoded with `OM.decode()`
+
+
+        getSolution = ( name ) ->
+            if not ( problem = ProblemStore[name] )? then return
+            if problem.args?
+                [ result, problem.args ] = nextMatch problem.args...
+            else
+                result = null
+            if result? and \
+               satisfiesBindingConstraints1( result, problem.bc1 ) and \
+               satisfiesBindingConstraints2( result, problem.bc2 )
+
+All binding constraints are satisfied, so this is a valid solution, as long
+as we haven't already reported it.
+
+                already = no
+                for earlier in problem.results
+                    if earlier.equals result
+                        already = yes
+                        break
+                if not already
+                    problem.results.push result
+                    return
+                        name : name
+                        solution : result
+                        count : problem.results.length
+                        success : yes
+
+If `nextMatch` signalled that it should not be called again (by making
+`problem.args` null) then we return null to indicate there are no more
+solutions.
+
+            if not problem.args?
+                return
+                    name : name
+                    count : problem.results.length
+                    success : no
+
+Otherwise we found a solution but it was one we've already seen, or that
+didn't satisfy binding constraints, so we recur to seek the next one, if
+any.
+
+            nextSolution name
+
+Now we install an event handler that calls these two functions on behalf of
+a client communicating with us, as a WebWorker, through message passing.
+
+        self.addEventListener 'message', ( event ) ->
+            switch event.data[0]
+
+Pass `[ 'newProblem', 'name here', LHS, RHS ]` to create a new matching
+problem.  We expect JSON strings of the LHS and RHS, which we convert to
+`OMNode` instances before passing to `newProblem()`.
+
+                when 'newProblem'
+                    [ command, name, LHS, RHS ] = event.data
+                    newProblem name, OM.decode( LHS ), OM.decode( RHS )
+
+Pass `[ 'getSolution', 'problem name' ]` to fetch the next solution to the
+named problem, created by a call to `nextSolution()`.
+
+                when 'getSolution'
+                    [ command, name ] = event.data
+                    if ( result = getSolution name )?
+                        if result.solution?
+                            converted = { }
+                            for constraint in result.solution.contents
+                                converted[constraint.pattern.name] =
+                                    constraint.expression.encode()
+                            result.solution = converted
+                    self.postMessage result
+
+Pass `[ 'deleteProblem', 'problem name' ]` to remove the named problem from
+memory.
+
+                when 'deleteProblem'
+                    [ command, name ] = event.data
+                    delete ProblemStore[name]

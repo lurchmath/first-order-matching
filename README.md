@@ -19,8 +19,11 @@ npm install first-order-matching
 ```
 
 Then see the [API Reference
-page](https://lurchmath.github.io/first-order-matching/site/api-reference) for what to do
-next.
+page](https://lurchmath.github.io/first-order-matching/site/api-reference)
+for what to do next.
+
+You can also run this script inside a WebWorker; see the documentation link
+below for details.
 
 ## Repository contents
 

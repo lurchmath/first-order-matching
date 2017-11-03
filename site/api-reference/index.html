@@ -88,7 +88,7 @@
             <li><a href="#constraints">Constraints</a></li>
             <li><a href="#matching">Matching</a></li>
             <li><a href="#minimally-documented-code">Minimally Documented Code</a></li>
-            <li><a href="#this-documentation-is-incomplete-more-coming-soon">This documentation is incomplete!  More coming soon...</a></li>
+            <li><a href="#webworker-api">WebWorker API</a></li>
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -113,6 +113,17 @@ or import from a CDN with the following one-liner.</p>
 
 <p>After that, any of the example code snippets in this documentation should
 function as-is.</p>
+<h3 id="in-a-webworker">In a <a href="https://www.w3.org/TR/workers/">WebWorker</a></h3>
+<p>To place this script in a WebWorker, you will need to download two source
+files and place them in your project's web space.
+ * <a href="https://raw.githubusercontent.com/lurchmath/first-order-matching/master/first-order-matching.js">The minified JavaScript file from this repository</a>
+ * <a href="https://raw.githubusercontent.com/lurchmath/openmath-js/master/openmath.js">The minified JavaScript file from the OpenMath repository</a></p>
+<p>Your script can then create the worker as follows.</p>
+<pre><code class="js">W = new Worker( &quot;path/to/first-order-matching.js&quot; );
+// it imports openmath.js itself, from the same folder
+</code></pre>
+
+<p>This exposes an asynchronous API documented <a href="#webworker-api">below</a>.</p>
 <h2 id="using-openmath">Using OpenMath</h2>
 <p>In order to do work with mathematical expressions, there needs to be some
 data structure for storing and some algorithms for manipulating those
@@ -369,7 +380,94 @@ the whitepaper accessible from <a href="..">the main documentation page</a>.</p>
    list CL to the expression e and all metavariables x appearing in e will
    be replaced simultaneously with the respective result of <code>CL.lookup(x)</code></li>
 </ul>
-<h2 id="this-documentation-is-incomplete-more-coming-soon">This documentation is incomplete!  More coming soon...</h2>
+<h2 id="webworker-api">WebWorker API</h2>
+<p>This section assumes that you have read and understood the API for the
+non-WebWorker use of the module, as given in the previous sections.  It also
+assumes that you've read the <a href="#getting-started">getting started section</a> so
+that you know how to import this module into a WebWorker.</p>
+<p>Assuming you've created a worker <code>W</code> as in that section, you can then
+interact with it through four types of messages.</p>
+<ol>
+<li>Create a new problem.</li>
+</ol>
+<pre><code class="js">W.postMessage( [ &quot;newProblem&quot;, name, LHS, RHS ] );
+</code></pre>
+
+<p>This creates a new matching problem with the given <code>name</code> (which will be
+treated as a text string) and the given left and right hand sides, <code>LHS</code> and
+<code>RHS</code>.  Each should be the JSON-serialized version of an <code>OMNode</code> instance,
+created by a call to <code>N.encode()</code>, for an <code>OMNode</code> instance <code>N</code>.</p>
+<p>The <code>LHS</code> may contain metavariables and expression functions, but the <code>RHS</code>
+may not. To construct such objects, it may be useful to import the
+first-order matching package into the main thread as well, so that you have
+access to the functions documented earlier in this page, such as
+<code>setMetavariable()</code>.</p>
+<p>It does not attempt to solve the problem; it only sets it up for later
+solution. No return message is posted back to the main thread.</p>
+<p><em>Example:</em></p>
+<pre><code class="js">LHS = OM.int( 5 );
+RHS = OM.str( &quot;Hello&quot; );
+W.postMessage( [ &quot;newProblem&quot;, &quot;#1&quot;, LHS.encode(), RHS.encode() ] );
+</code></pre>
+
+<ol>
+<li>Fetch the next solution for an existing problem.</li>
+</ol>
+<pre><code class="js">W.onmessage = function ( event ) {
+    console.log( &quot;Heard back from the worker with this:&quot;, event.data );
+}
+W.getSolution( name );
+</code></pre>
+
+<p>This instructs the worker to compute a solution to the matching problem with
+the given <code>name</code>, which must have been set up earlier by a message of the
+"newProblem" type.  Because matching problems may have zero, one, or more
+solutions, this message may be passed repeatedly to generate as many
+solutions as the given problem has.  Each sending of the message only
+requests one solution be computed, and thus multiple messages are required
+to fetch multiple solutions.</p>
+<p>The results are posted back to the main thread using <code>postMessage()</code> from
+within the worker thread, and thus the <code>onmessage</code> handler must be
+implemented, as shown in the example code above.  The data in the <code>event</code>
+will be an object with these attributes:
+ * <code>name</code> - the name of the problem, as passed to the message
+ * <code>success</code> - true if a solution was computed, false if there are no more
+   solutions to this problem (besides any yielded earlier)
+ * <code>count</code> - the total number of solutions computed so far, a running total
+ * <code>solution</code> - if <code>success</code> is true, then this contains the most recently
+   generated solution, as an object mapping metavariable names to the JSON
+   string representations of OM trees, which can be decoded with
+   <code>OM.decode()</code>; if <code>success</code> is false, then this field is undefined</p>
+<p>Messages of the "getSolution" type can be passed over and over to generate
+new solutions until the result yields a false value for <code>success</code>.</p>
+<p><em>Example:</em></p>
+<pre><code class="js">function getAllSolutions ( name, LHS, RHS, callback ) {
+    var results = [ ];
+    W.postMessage( [ &quot;newProblem&quot;, name, LHS.encode(), RHS.encode() ] );
+    W.onmessage = function ( event ) {
+        if ( event.data.success ) {
+            results.push( event.data.solution );
+            W.postMessage( [ &quot;getSolution&quot;, name ] );
+        } else {
+            callback( results );
+        }
+    }
+    W.postMessage( [ &quot;getSolution&quot;, name ] );
+}
+</code></pre>
+
+<ol>
+<li>Delete an old problem.</li>
+</ol>
+<pre><code class="js">W.postMessage( [ &quot;deleteProblem&quot;, name ] );
+</code></pre>
+
+<p>Lets the worker reclaim memory by discarding problems about which no further
+messages will be passed.</p>
+<p><em>Example:</em></p>
+<pre><code class="js">W.postMessage( [ &quot;deleteProblem&quot;, &quot;#1&quot; ] );
+</code></pre>
+
 <script src="https://embed.runkit.com"></script>
 
 <script>

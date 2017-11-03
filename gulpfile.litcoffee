@@ -26,7 +26,7 @@ Create "tests" task to run unit tests.
     gulp.task 'test', shell.task [
         'node'
         './node_modules/jasmine-node/lib/jasmine-node/cli.js'
-        '--verbose --coffee'
+        '--verbose --coffee --forceexit'
         'first-order-matching-spec.litcoffee'
     ].join ' '
 
@@ -35,4 +35,3 @@ Create "docs" task to build the documentation using
 installed on your system.
 
     gulp.task 'docs', shell.task 'mkdocs build'
-

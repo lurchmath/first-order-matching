@@ -1,12 +1,11 @@
 {
     "name": "first-order-matching",
-    "version": "1.0.6",
+    "version": "1.1.0",
     "description": "A limited JavaScript implementation of a matching algorithm for expressions of first-order logic",
     "author": "Nathan Carter <ncarter@bentley.edu> (http://nathancarter.github.io",
     "license": "LGPLv3",
     "dependencies": {
         "coffee-script": "1.8.0",
-        "jasmine-node": "1.14.5",
         "openmath-js": "^1.0.4"
     },
     "repository": {
@@ -19,6 +18,8 @@
         "gulp-shell": "^0.6.3",
         "gulp-sourcemaps": "^2.6.1",
         "gulp-uglify": "^3.0.0",
-        "pump": "^1.0.2"
+        "jasmine-node": "^1.14.5",
+        "pump": "^1.0.2",
+        "webworker-threads": "^0.7.13"
     }
 }

@@ -2983,3 +2983,102 @@ should give no solutions.
                           'for.all[a,imp(lt(a,a),lt(a,a))],lt(a,a))'
             result = someMatches left, right
             expect( result.length ).toBe 0
+
+## WebWorker support
+
+This section tests that the three functions in the WebWorker API work.  We
+choose just a small sample of the above matching problems to re-pose to the
+module while it's running in a simulated WebWorker environment, here.
+
+    describe 'WebWorker support', ->
+
+        { Worker } = require 'webworker-threads'
+        worker = null
+        beforeEach ->
+            worker = new Worker 'first-order-matching.js'
+            worker.onmessage = ( event ) -> worker.listener? event
+        qe = ( text ) -> quick( text ).encode()
+        asyncTestGetSolution = ( name, testfunc ) ->
+            worker.listener = testfunc
+            worker.postMessage [ 'getSolution', name ]
+
+### should solve a trivial matching problem
+
+First, we test to see if we can set up a problem with the simplest of
+constraints, and get back one solution, the empty map, followed by a null
+solution if we ask for more.
+
+        it 'should solve a trivial matching problem', ( done ) ->
+            worker.postMessage [ 'newProblem', 1, qe( 'x' ), qe( 'x' ) ]
+            asyncTestGetSolution 1, ( result ) ->
+                expect( result.data.name ).toBe 1
+                expect( result.data.success ).toBe yes
+                expect( result.data.solution ).toEqual { }
+                expect( result.data.count ).toBe 1
+                asyncTestGetSolution 1, ( result ) ->
+                    expect( result.data.name ).toBe 1
+                    expect( result.data.success ).toBe no
+                    expect( result.data.solution ).toBeUndefined()
+                    expect( result.data.count ).toBe 1
+                    done()
+
+### should solve a close-to-trivial matching problem
+
+Now test to see if we can set up a problem with no solution, and get back
+null the first time we ask for a solution.
+
+        it 'should solve a close-to-trivial matching problem', ( done ) ->
+            worker.postMessage [ 'newProblem', 1, qe( 'x' ), qe( 'y' ) ]
+            asyncTestGetSolution 1, ( result ) ->
+                expect( result.data.name ).toBe 1
+                expect( result.data.success ).toBe no
+                expect( result.data.solution ).toBeUndefined()
+                expect( result.data.count ).toBe 0
+                done()
+
+### should solve a nontrivial matching problem
+
+Now test to see if we can set up a problem with precisely two solutions, and
+get back each of the solutions one after the other, followed by null the
+third time we ask for a solution.
+
+        it 'should solve a nontrivial matching problem', ( done ) ->
+            worker.postMessage [ 'newProblem', 'foo',
+                qe( 'Foo(_P_of__x,_P_of__y)' ),
+                qe( 'Foo(f(1),f(2))' ) ]
+            asyncTestGetSolution 'foo', ( result ) ->
+
+Solution 1: Foo(P(x),P(y)) matches Foo(f(1),f(2)) if P(x)=f(x), x=1, y=2.
+
+                expect( result.data.name ).toBe 'foo'
+                expect( result.data.success ).toBe yes
+                expect( alphaEquivalent OM.decode( result.data.solution.P ),
+                    ef 'v0', 'f(v0)' ).toBeTruthy()
+                expect( OM.decode( result.data.solution.x ).equals \
+                    quick '1' ).toBeTruthy()
+                expect( OM.decode( result.data.solution.y ).equals \
+                    quick '2' ).toBeTruthy()
+                expect( result.data.count ).toBe 1
+                asyncTestGetSolution 'foo', ( result ) ->
+
+Solution 2: Foo(P(x),P(y)) matches Foo(f(1),f(2)) if P(x)=x, x=f(1), y=f(2).
+
+                    expect( result.data.name ).toBe 'foo'
+                    expect( result.data.success ).toBe yes
+                    expect( alphaEquivalent \
+                        OM.decode( result.data.solution.P ),
+                        ef 'v0', 'v0' ).toBeTruthy()
+                    expect( OM.decode( result.data.solution.x ).equals \
+                        quick 'f(1)' ).toBeTruthy()
+                    expect( OM.decode( result.data.solution.y ).equals \
+                        quick 'f(2)' ).toBeTruthy()
+                    expect( result.data.count ).toBe 2
+                    asyncTestGetSolution 'foo', ( result ) ->
+
+Only two solutions.
+
+                        expect( result.data.name ).toBe 'foo'
+                        expect( result.data.success ).toBe no
+                        expect( result.data.solution ).toBeUndefined()
+                        expect( result.data.count ).toBe 2
+                        done()

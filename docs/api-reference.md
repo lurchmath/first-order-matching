@@ -30,6 +30,23 @@ M = require( "first-order-matching" );
 After that, any of the example code snippets in this documentation should
 function as-is.
 
+### In a [WebWorker](https://www.w3.org/TR/workers/)
+
+To place this script in a WebWorker, you will need to download two source
+files and place them in your project's web space.
+
+ * [The minified JavaScript file from this repository](https://raw.githubusercontent.com/lurchmath/first-order-matching/master/first-order-matching.js)
+ * [The minified JavaScript file from the OpenMath repository](https://raw.githubusercontent.com/lurchmath/openmath-js/master/openmath.js)
+
+Your script can then create the worker as follows.
+
+```js
+W = new Worker( "path/to/first-order-matching.js" );
+// it imports openmath.js itself, from the same folder
+```
+
+This exposes an asynchronous API documented [below](#webworker-api).
+
 ## Using OpenMath
 
 In order to do work with mathematical expressions, there needs to be some
@@ -305,7 +322,113 @@ Constraint list API:
    list CL to the expression e and all metavariables x appearing in e will
    be replaced simultaneously with the respective result of `CL.lookup(x)`
 
-## This documentation is incomplete!  More coming soon...
+## WebWorker API
+
+This section assumes that you have read and understood the API for the
+non-WebWorker use of the module, as given in the previous sections.  It also
+assumes that you've read the [getting started section](#getting-started) so
+that you know how to import this module into a WebWorker.
+
+Assuming you've created a worker `W` as in that section, you can then
+interact with it through four types of messages.
+
+### Create a new problem
+
+```js
+W.postMessage( [ "newProblem", name, LHS, RHS ] );
+```
+
+This creates a new matching problem with the given `name` (which will be
+treated as a text string) and the given left and right hand sides, `LHS` and
+`RHS`.  Each should be the JSON-serialized version of an `OMNode` instance,
+created by a call to `N.encode()`, for an `OMNode` instance `N`.
+
+The `LHS` may contain metavariables and expression functions, but the `RHS`
+may not. To construct such objects, it may be useful to import the
+first-order matching package into the main thread as well, so that you have
+access to the functions documented earlier in this page, such as
+`setMetavariable()`.
+
+It does not attempt to solve the problem; it only sets it up for later
+solution. No return message is posted back to the main thread.
+
+*Example:*
+
+```js
+LHS = OM.int( 5 );
+RHS = OM.str( "Hello" );
+W.postMessage( [ "newProblem", "#1", LHS.encode(), RHS.encode() ] );
+// A problem with no solutions has been posed.
+```
+
+### Fetch the next solution for an existing problem
+
+```js
+W.onmessage = function ( event ) {
+    console.log( "Heard back from the worker with this:", event.data );
+}
+W.getSolution( name );
+```
+
+This instructs the worker to compute a solution to the matching problem with
+the given `name`, which must have been set up earlier by a message of the
+"newProblem" type.  Because matching problems may have zero, one, or more
+solutions, this message may be passed repeatedly to generate as many
+solutions as the given problem has.  Each sending of the message requests
+that only one solution be computed, and thus the message may need to be sent
+multiple times in succession if a problem has more than one solution, and
+the client wishes to see more than one.
+
+The results are posted back to the main thread using `postMessage()` from
+within the worker thread, and thus the `onmessage` handler must be
+implemented, as shown in the example code above.  The data in the `event`
+will be an object with these attributes:
+
+ * `name` - the name of the problem, as passed to the message
+ * `success` - true if a solution was computed, false if there are no more
+   solutions to this problem (besides any yielded earlier)
+ * `count` - the total number of solutions computed so far, a running total
+ * `solution` - if `success` is true, then this contains the most recently
+   generated solution, as an object mapping metavariable names to the JSON
+   string representations of `OMNode` instances, which can be decoded into
+   actual `OMNode` instances with `OM.decode()`; if `success` is false,
+   then this field is undefined
+
+Messages of the "getSolution" type can be passed over and over to generate
+new solutions until the result yields a false value for `success`.
+
+*Example:*
+
+```js
+function getAllSolutions ( name, LHS, RHS, callback ) {
+    var results = [ ];
+    W.postMessage( [ "newProblem", name, LHS.encode(), RHS.encode() ] );
+    W.onmessage = function ( event ) {
+        if ( event.data.success ) {
+            results.push( event.data.solution );
+            W.postMessage( [ "getSolution", name ] );
+        } else {
+            callback( results );
+        }
+    }
+    W.postMessage( [ "getSolution", name ] );
+}
+```
+
+### Delete an old problem
+
+```js
+W.postMessage( [ "deleteProblem", name ] );
+```
+
+Lets the worker reclaim memory by discarding problems about which no further
+messages will be passed.
+
+*Example:*
+
+```js
+W.postMessage( [ "deleteProblem", "#1" ] );
+```
 
 <script src="https://embed.runkit.com"></script>
 <script>
