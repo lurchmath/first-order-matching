@@ -1,7 +1,7 @@
 
 # First-Order Matching
 
-![Build status](https://travis-ci.org/lurchmath/first-order-matching.svg?branch=master)
+[![Build Status](https://travis-ci.org/lurchmath/first-order-matching.svg?branch=master)](https://travis-ci.org/lurchmath/first-order-matching)
 
 A limited JavaScript implementation of a matching algorithm for expressions of first-order logic
 
