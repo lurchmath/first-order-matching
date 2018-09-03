@@ -20,7 +20,7 @@
 \maketitle
 
 \begin{abstract}%%%%%%%%%%%%%%%%%%%%%%%%
-This document describes a limited first-order matching algorithm.  This algorithm is implemented in JavaScript in an \texttt{npm} package, and this document serves as documentation for the theory behind the implementation.
+This document describes a limited first-order matching algorithm.  This algorithm is implemented in JavaScript in an \texttt{npm} package and this document serves as documentation for the theory behind the implementation.
 \end{abstract}
 
 
@@ -40,7 +40,7 @@ An \emph{address} of a subexpression $x$ in an expression $y$ is the sequence of
 
 If the immediate subexpressions of any given expression are ordered from left-to-right in the order written, then each ``step'' can simply be an integer index into that ordered set of immediate subexpressions, making an address a vector of integers.
 
-In such a situation, we might consider the expression $3x+t^2$ to have a syntax tree that we might write in LISP-like notation as \verb'(plus (times 3 x) (power t 2))' and thus the $x$ would have address $\langle1,2\rangle$ within the larger expression, using zero-based indices.  The details are unimportant; what matters is that every subexpression has an address, and such addresses can be used to look up subexpressions.  The empty vector $\langle\rangle$ indicates the address of an expression within itself.
+In such a situation, we might consider the expression $3x+t^2$ to have a syntax tree that we might write in LISP-like notation as \verb'(plus (times 3 x) (power t 2))' and thus the $x$ would have address $\langle1,2\rangle$ within the larger expression, using zero-based indices.  The details are unimportant; what matters is that every subexpression has an address and such addresses can be used to look up subexpressions.  The empty vector $\langle\rangle$ indicates the address of an expression within itself.
 
 Given an expression $e$ and an address $a$ into it, we write $e[a]$ to mean the subexpression at address $a$ within $e$.  Note that the syntax $e[a]$ is \emph{not} itself a syntactic form within $E$, but rather a notation used in this document to describe subexpressions of $e$, each of which is of course in $E$.  Thus while the syntax $e[a]$ is not in $E$, the result of evaluating that syntax is in $E$.
 
@@ -135,7 +135,7 @@ A constraint set $C$ is \emph{type consistent} otherwise.
 A \emph{potential solution} is a partial function $s:M\to E$; it can therefore be used to instantiate metavariables.
 \end{dfn}
 
-For convenience, we will write $s(e)$ for any $e\in E'$ to mean the simultaneous replacement of all metavariables $m$ appearing in both $e$ and the domain of $s$ with the value of $s(m)$.
+For convenience, we will write $s(e)$ for any $e\in E'$ to mean the expression resulting from the simultaneous replacement, in $e$, of all metavariables $m$ appearing in both $e$ and the domain of $s$ with the value of $s(m)$.
 
 \begin{dfn}[extending a solution]
 We say that a potential solution $s$ \emph{extends} a potential solution $s'$ if, when viewed as sets of ordered pairs, $s\supseteq s'$.  We can also say \emph{properly extends} for $s\supsetneq s'$.
@@ -183,7 +183,7 @@ We will want solutions that respect free variables, but we will ignore that for 
 
 \section{Specification}\label{S:spec}%%%%%%%%%%%%%%%%%%%%%%%%
 
-I claim that the following recursive equations respect the definition of $F$ and give us an outline for how to implement the computation of $F$.  I prove the claim as Theorem \ref{T:main}, below.  In these recursive equations, $C$ is any constraint set and $s$ is any potential solution.  The cases are to be read in order, so that case $n$ is only considered if cases $1$ through $n-1$ do not apply.
+I claim that the following recursive equations respect the definition of $F$ and give us an outline for how to implement the computation of $F$.  I prove the claim as Theorem \ref{T:main}, below.  In these recursive equations, $C$ is any constraint set and $s$ is any potential solution.  The cases are to be read in order, so that case $n$ is considered only if cases $1$ through $n-1$ do not apply.
 
 Technically, the function $F$ defined here is ambiguous, because in some cases it chooses an arbitrary constraint (or two) from the set $C$ to process next, an operation that is not deterministic.  We ignore this small problem, because one can fix it by treating $C$ as a list instead and always choosing the earliest entry to remove ambiguity.  This requires replacing $\cup$ with list concatenation (removing duplicate entries) as well.  We prefer the simpler set-theoretic notation, but the reader is free to think in terms of lists instead.
 
@@ -507,7 +507,7 @@ This completes the final equality proof for the final case, and thus completes t
 
 \section{Enumeration}%%%%%%%%%%%%%%%%%%%%%%%%
 
-My purpose for the matching algorithm documented herein that it will most frequently be used to answer the question, ``Does expression $e$ match pattern $p$?''  Occasionally, a user may ask \emph{how} an expression matches a pattern, which requires answering the question, ``What is an example instantiation of $p$ that equals $e$?''  The function $F$ defined in Section \ref{S:spec} is much more general.  It always answers the question, ``What is the complete set of instantiations of $p$ that equal $e$?''
+My purpose for the matching algorithm documented herein is that it will most frequently be used to answer the question, ``Does expression $e$ match pattern $p$?''  Occasionally, a user may ask \emph{how} an expression matches a pattern, which requires answering the question, ``What is an example instantiation of $p$ that equals $e$?''  The function $F$ defined in Section \ref{S:spec} is much more general.  It always answers the question, ``What is the complete set of instantiations of $p$ that equal $e$?''
 
 This is required because the algorithm, while exploring potential solutions, does not know which will extend to be complete solutions, and thus must explore all avenues.  In other words, the recursive nature of the problem requires computing all solutions down one branch of the recursion, because it does not know which, if any, will extend to full solutions when passed on down sibling branches of the same recursion.
 
@@ -525,7 +525,7 @@ We already know that we can turn a pattern-matching problem (match $p$ to $e$) i
 A computation state $(C,\{\},\{\})$ created from a constraint set $C$ is called an \emph{initial computation state.}
 \end{dfn}
 
-We will construct a function $N:\Sigma'\to\Sigma'\times(M\times E\cup\{*\})$, called the ``next'' function, which will enumerate all the complete solutions to a constraint set $C$.  Given any $C$, we will construct its initial computation state $\sigma$ and iteratively apply $N$.  Each application of $N$ will yield a new computation state as well as either a new solution $s\in M\times E$ or the $*$ object, which means that no additional solutions exist.  We require that $N(*)=(*,*)$ and we use this as a flag to indicate when iteration of $N$ has reached a fixed point, and no further solutions are available.
+We will construct a function $N:\Sigma'\to\Sigma'\times((M\times E)\cup\{*\})$, called the ``next'' function, which will enumerate all the complete solutions to a constraint set $C$.  Given any $C$, we will construct its initial computation state $\sigma$ and iteratively apply $N$.  Each application of $N$ will yield a new computation state as well as either a new solution $s\in M\times E$ or the $*$ object, which means that no additional solutions exist.  We require that $N(*)=(*,*)$ and we use this as a flag to indicate when iteration of $N$ has reached a fixed point, and no further solutions are available.
 
 An example may clarify this.  Assume $C$ is a constraint set such that $F(C,\{\})=\{s_1,s_2,s_3\}$.  We can compute $F(C,\{\})$ using $N$ as follows.
 \begin{enumerate}
@@ -541,7 +541,7 @@ If a caller wants to know all of $F(C,\{\})$, they can simply iterate $N$ enough
 
 There is one important difference between the results of $F$ and $N$.  Because $F$ is computing full solution sets before returning them, it can apply the $\min$ operator to ensure that only minimal solutions are returned.  But $N$ returns solutions as soon as it finds them, pausing computation indefinitely.  Thus it cannot apply the $\min$ operator, which requires a full solution set as input.  Consequently, the definition of $N$ given below parallels the definition of $F$ \emph{almost} perfectly; it differs by leaving out the uses of the $\min$ operator.  Thus $N$ will occasionally return more solutions than $F$ will (but never less!).
 
-We therefore propose the following recursive definition for $N$.  Note that it essentially follows exactly the cases of $F$, except converts them into an enumeration rather than a complete computation.  In each case, I write $N(C,s,d)$ as shorthand for $N(\sigma)$, where $\sigma=(C,s,d)$, in the way common to mathematics texts (rather than, for instance, insisting on $\sigma$'s status as a tuple, as in $N((C,s,d))$).  Also, $N$ can be thought of as two component functions, $N_1:\Sigma'\to\Sigma'$ and $N_2:\Sigma'\to(M\times E\cup\{*\})$, a notation I make use of below.
+We therefore propose the following recursive definition for $N$.  Note that it essentially follows exactly the cases of $F$, except converts them into an enumeration rather than a complete computation.  In each case, I write $N(C,s,d)$ as shorthand for $N(\sigma)$, where $\sigma=(C,s,d)$, in the way common to mathematics texts (rather than, for instance, insisting on $\sigma$'s status as a tuple, as in $N((C,s,d))$).  Also, $N$ can be thought of as two component functions, $N_1:\Sigma'\to\Sigma'$ and $N_2:\Sigma'\to((M\times E)\cup\{*\})$, a notation I make use of below.
 \begin{enumerate}
 \item	{\bf Base case:}
 		$N(\{\},s,d)=(*,s)$
@@ -665,11 +665,11 @@ Assume that we have a pattern $p$ to which we wish to match an expression $e$, a
 
 Before invoking $F$ or $N$:
 \begin{enumerate}
-\item	Find all subexpressions $b_1,\ldots,b_n$ of $p$ that are of binding type, and call their bound variables $v_1,\ldots,v_n$.  For each $i\in\{1,\ldots,n\}$, compute the set of metavariables appearing free in $b_i$, and call them $m_{i,1},\ldots,m_{i,k_i}$.  Each pair $(v_i,m_{i,j})$ is a restrictions on the solutions we are seeking, because the first half of Definition \ref{D:respect} says that we must keep only solutions for which $s(m_{i,j})$ is free in $b_i$, which is the same as saying that $s(v_i)$ does not appear free in $s(m_{i,j})$.  Let the (finite) set of all such pairs be $R_1$.
+\item	Find all subexpressions $b_1,\ldots,b_n$ of $p$ that are of binding type, and call their bound variables $v_1,\ldots,v_n$.  For each $i\in\{1,\ldots,n\}$, compute the set of metavariables appearing free in $b_i$, and call them $m_{i,1},\ldots,m_{i,k_i}$.  Each pair $(v_i,m_{i,j})$ is a restriction on the solutions we are seeking, because the first half of Definition \ref{D:respect} says that we must keep only solutions for which $s(m_{i,j})$ is free in $b_i$, which is the same as saying that $s(v_i)$ does not appear free in $s(m_{i,j})$.  Let the (finite) set of all such pairs be $R_1$.
 \item	Find all expression function applications $P_1(x_1),\ldots,P_m(x_m)$ in $p$.  Each pair $(P_i,x_i)$ is also a restriction on the solutions we are seeking, because the second half of Definition \ref{D:respect} says that we must keep only solutions for which $s(m_i)$ is free to be plugged into the function $s(P_i)$, which is the same as saying that $s(m_i)$ is free to replace the variable of $s(P_i)$ in the body of $s(P_i)$.  Let the (finite) set of all such pairs be $R_2$.
 \end{enumerate}
 
-Assume that we have pre-computed $R_1$ and $R_2$ before invoking $F$ or $N$.  When computing $F(C,\{\})$, only one modification needs to be made.  In any case that adds a new pair to the potential solution $s$, add constraints to require that the newly extended potential solution not violate any restriction in $R$.  As an example, here is case \ref{case:metavar}, modified with such restrictions.
+Assume that we have pre-computed $R_1$ and $R_2$ before invoking $F$ or $N$.  When computing $F(C,\{\})$, only one modification needs to be made.  In any case that adds a new pair to the potential solution $s$, add constraints to require that the newly extended potential solution not violate any restriction in $R_1$ or $R_2$.  As an example, here is case \ref{case:metavar}, modified with such restrictions.
 	$$
        	F(C\cup\{(m,e)\},s) = \left\{
            	\begin{array}{ll}
@@ -799,7 +799,7 @@ Recall that the earliest applicable case in Section \ref{S:spec} is always appli
 
 \section{Supporting Substitution Notation}%%%%%%%%%%%%%%%%%%%%%%%%
 
-It is possible to convert a limited subset of substitution notation rules into functional notation rules.  Specifically, a rule in substitution notation must obey these restrictions.
+Substitution notation is the common notation from mathematical logic in which we write $P[x=y]$ to mean the expression $P$ after all free occurrences of the subexpression $x$ have been replaced by the subexpression $y$.  It is possible to convert a limited subset of substitution notation rules into functional notation rules.  Specifically, a rule in substitution notation must obey these restrictions.
 \begin{enumerate}
 \item	No substitution expression can contain another (e.g., one cannot write $P[x=y][w=z]$, nor $P[x=f[u=v]]$).
 \item	No substitution expression can contain in its third child a metavariable that appears elsewhere as the first child of a substitution expression (e.g., one cannot write $P[x=Q]$ and elsewhere $Q[y=z]$).
